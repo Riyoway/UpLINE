@@ -17,7 +17,7 @@ UpLINE is experimental and under active development. The current implementation 
 - Thrift Compact/Binary response parsing with an isolated unknown-field boundary
 - X25519 key generation during QR login and a temporary post-login E2EE key boundary
 
-Talk API field maps, complete E2EE message decryption, media formats, and continuous event synchronization remain version-dependent areas. See [LINE_API.md](LINE_API.md) for research notes; it is not official LINE documentation.
+Talk API field maps, complete E2EE message decryption, media formats, and continuous event synchronization remain version-dependent areas. See the [LINE Android APK analysis notes](docs/line-android-apk-analysis.md); they are not official LINE documentation.
 
 ## Requirements
 

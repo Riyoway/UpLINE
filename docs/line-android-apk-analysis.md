@@ -1,68 +1,57 @@
-\# LINE Android 26.11.0 Private Client Authentication Specification
+# LINE Android APK 解析メモ（26.11.0）
 
-> This file contains independent reverse-engineering notes for the UpLINE project. It is not official LINE documentation, does not imply an affiliation with LINE, and may become inaccurate when LINE changes its services or applications.
+> [!WARNING]
+> これはLINEの公式ドキュメントではありません。LINE Android公式APK（`jp.naver.line.android` / `26.11.0`）をAIに分析させた結果をもとにした、UpLINE向けの独立した調査メモです。LINE株式会社との関係・承認・保証を示すものではなく、LINEの更新によって内容や動作が変わる可能性があります。
 
+## 出典と利用範囲
 
+- 出典: LINE Android公式APKのAI支援による静的分析結果、およびUpLINEの実装検証
+- 目的: 自分のアカウントで動作する非公式クライアントの相互運用性調査
+- 非対象: APK本体の再配布、認証回避、他ユーザーのセッション取得、既存端末からのcredential抽出
 
-\## 1. Scope
+APK本体や、アカウントの認証情報・QR URL・秘密鍵はこのリポジトリに含めません。以下の内容は再現性や正確性を保証しない研究メモとして扱ってください。
 
-
+## 1. Scope
 
 対象:
 
+* LINE Android `26.11.0`
 
+* package: `jp.naver.line.android`
 
-\* LINE Android `26.11.0`
+* PC向けサブ端末クライアント
 
-\* package: `jp.naver.line.android`
+* QRコードログイン
 
-\* PC向けサブ端末クライアント
+* PIN認証
 
-\* QRコードログイン
+* セッション永続化
 
-\* PIN認証
+* Access Token取得
 
-\* セッション永続化
+* Refresh Token取得
 
-\* Access Token取得
+* E2EE初期化
 
-\* Refresh Token取得
-
-\* E2EE初期化
-
-\* Talk API接続
-
-
+* Talk API接続
 
 対象外:
 
+* 他ユーザーのセッション取得
 
+* 認証回避
 
-\* 他ユーザーのセッション取得
+* QR確認操作のバイパス
 
-\* 認証回避
+* 既存端末からのcredential抽出
 
-\* QR確認操作のバイパス
+---
 
-\* 既存端末からのcredential抽出
-
-
-
-\---
-
-
-
-\# 2. Protocol Overview
-
-
+## 2. Protocol Overview
 
 LINEの通常チャット通信は一般的なREST JSON APIではない。
 
-
-
 中心となるのは:
-
-
 
 ```text
 
@@ -86,11 +75,7 @@ TalkService / Auth services
 
 ```
 
-
-
 APK内では以下を確認。
-
-
 
 ```text
 
@@ -106,11 +91,7 @@ liblegy.so
 
 ```
 
-
-
 主要サービス:
-
-
 
 ```text
 
@@ -118,25 +99,17 @@ SECONDARY\_QR\_LOGIN
 
 /acct/lgn/sq/v1
 
-
-
 SECONDARY\_QR\_LOGIN\_PERMIT
 
 /acct/lp/lgn/sq/v1
-
-
 
 TALK
 
 /S4
 
-
-
 POLLING
 
 /P4
-
-
 
 Legacy TalkService
 
@@ -144,19 +117,11 @@ Legacy TalkService
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 3. Required HTTP Headers
-
-
+## 3. Required HTTP Headers
 
 基本:
-
-
 
 ```http
 
@@ -168,11 +133,7 @@ User-Agent: <client user agent>
 
 ```
 
-
-
 ログイン完了後:
-
-
 
 ```http
 
@@ -180,11 +141,7 @@ X-Line-Access: <access token>
 
 ```
 
-
-
 APK内で確認できるLINE固有ヘッダー:
-
-
 
 ```text
 
@@ -210,11 +167,7 @@ X-LST
 
 ```
 
-
-
 QR待機系では:
-
-
 
 ```http
 
@@ -224,15 +177,9 @@ X-LST: <long polling timeout milliseconds>
 
 ```
 
-
-
 を使用する。
 
-
-
 例:
-
-
 
 ```http
 
@@ -242,19 +189,11 @@ X-LST: 30000
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 4. QR Login — Recommended LINE 26.x Flow
-
-
+## 4. QR Login — Recommended LINE 26.x Flow
 
 26.xでは以下を基本フローとする。
-
-
 
 ```text
 
@@ -312,19 +251,11 @@ E2EE key import / registration
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 5. createSession
-
-
+## 5. createSession
 
 Endpoint:
-
-
 
 ```text
 
@@ -332,11 +263,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -344,11 +271,7 @@ createSession
 
 ```
 
-
-
 Transport:
-
-
 
 ```text
 
@@ -356,11 +279,7 @@ Thrift
 
 ```
 
-
-
 Request:
-
-
 
 ```text
 
@@ -368,19 +287,13 @@ empty args
 
 ```
 
-
-
 概念IDL:
-
-
 
 ```thrift
 
 struct CreateQrSessionRequest {
 
 }
-
-
 
 struct CreateQrSessionResponse {
 
@@ -390,11 +303,7 @@ struct CreateQrSessionResponse {
 
 ```
 
-
-
 レスポンス:
-
-
 
 ```ts
 
@@ -406,15 +315,9 @@ struct CreateQrSessionResponse {
 
 ```
 
-
-
 この値は以降のQRログイン全体で使う一時セッションID。
 
-
-
 例:
-
-
 
 ```text
 
@@ -436,19 +339,11 @@ qrCodeLoginV2ForSecure
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 6. createSessionV2
-
-
+## 6. createSessionV2
 
 26.11.0 APK内には別途:
-
-
 
 ```text
 
@@ -456,15 +351,9 @@ createSessionV2
 
 ```
 
-
-
 も存在。
 
-
-
 確認できたmodel:
-
-
 
 ```text
 
@@ -474,11 +363,7 @@ CreateSessionV2Response(authSessionId:
 
 ```
 
-
-
 したがって概念的には:
-
-
 
 ```thrift
 
@@ -488,8 +373,6 @@ struct CreateSessionV2Request {
 
 }
 
-
-
 struct CreateSessionV2Response {
 
 &#x20;   1: string authSessionId
@@ -498,11 +381,7 @@ struct CreateSessionV2Response {
 
 ```
 
-
-
 ただし、
-
-
 
 ```text
 
@@ -510,11 +389,7 @@ PC側が新規QRセッションを開始
 
 ```
 
-
-
 する通常のsecondary-device loginでは、現在も空requestの
-
-
 
 ```text
 
@@ -522,19 +397,11 @@ createSession
 
 ```
 
-
-
 を使うフローが確認されている。
-
-
 
 `createSessionV2` はprimary側処理や別ログインコンテキスト用である可能性が高い。
 
-
-
 Status:
-
-
 
 ```text
 
@@ -544,23 +411,13 @@ APK存在: CONFIRMED
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 7. createQrCodeForSecure
-
-
+## 7. createQrCodeForSecure
 
 LINE 26.xで最重要。
 
-
-
 Endpoint:
-
-
 
 ```text
 
@@ -568,11 +425,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -580,11 +433,7 @@ createQrCodeForSecure
 
 ```
 
-
-
 Request:
-
-
 
 ```thrift
 
@@ -596,11 +445,7 @@ struct CreateQrCodeRequest {
 
 ```
 
-
-
 レスポンスはAPKと26.x解析結果から:
-
-
 
 ```thrift
 
@@ -618,11 +463,7 @@ struct CreateQrCodeForSecureResponse {
 
 ```
 
-
-
 概念レスポンス:
-
-
 
 ```ts
 
@@ -640,11 +481,7 @@ interface CreateQrCodeForSecureResponse {
 
 ```
 
-
-
 特に:
-
-
 
 ```text
 
@@ -652,15 +489,9 @@ nonce
 
 ```
 
-
-
 を必ず保存する。
 
-
-
 これは最終段階の:
-
-
 
 ```text
 
@@ -668,23 +499,13 @@ qrCodeLoginV2ForSecure
 
 ```
 
-
-
 に返す必要がある。
 
+---
 
-
-\---
-
-
-
-\# 8. QR URL Generation
-
-
+## 8. QR URL Generation
 
 サーバーが返す:
-
-
 
 ```text
 
@@ -692,15 +513,9 @@ callbackUrl
 
 ```
 
-
-
 をそのままQR化するだけではE2EE移行が不完全になる場合がある。
 
-
-
 PC側でCurve25519/X25519キーペアを生成。
-
-
 
 ```text
 
@@ -710,15 +525,9 @@ publicKey = Curve25519(privateKey)
 
 ```
 
-
-
 そのpublic keyをQR URLへ付加する。
 
-
-
 旧来構造:
-
-
 
 ```text
 
@@ -726,11 +535,7 @@ publicKey = Curve25519(privateKey)
 
 ```
 
-
-
 最終的には:
-
-
 
 ```text
 
@@ -742,21 +547,13 @@ E2EE secret parameters
 
 ```
 
-
-
 をQRコードとして描画する。
 
-
-
 概念:
-
-
 
 ```ts
 
 const keyPair = createX25519KeyPair();
-
-
 
 const qrUrl =
 
@@ -766,31 +563,17 @@ const qrUrl =
 
 ```
 
-
-
 注意:
-
-
 
 実装時にはcallbackUrlに既にqueryがあるケースを考慮すること。
 
+---
 
-
-\---
-
-
-
-\# 9. QR Display
-
-
+## 9. QR Display
 
 生成された文字列を普通のQR Codeとして表示する。
 
-
-
 PCクライアント:
-
-
 
 ```text
 
@@ -806,21 +589,13 @@ LOGIN
 
 &#x20;└─────────────────┘
 
-
-
 Scan this QR code with LINE
 
 ```
 
-
-
 QR画像そのものをLINEサーバーから取得するAPIではない。
 
-
-
 つまり:
-
-
 
 ```text
 
@@ -840,15 +615,9 @@ QR画像生成
 
 ```
 
-
-
 となる。
 
-
-
 推奨:
-
-
 
 ```text
 
@@ -860,27 +629,15 @@ qr-code-styling
 
 ```
 
-
-
 などでローカル生成。
 
+---
 
-
-\---
-
-
-
-\# 10. checkQrCodeVerified
-
-
+## 10. checkQrCodeVerified
 
 メインスマホがQRを読み取るまで待つRPC。
 
-
-
 Endpoint:
-
-
 
 ```text
 
@@ -888,11 +645,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -900,11 +653,7 @@ checkQrCodeVerified
 
 ```
 
-
-
 Request:
-
-
 
 ```thrift
 
@@ -916,11 +665,7 @@ struct CheckQrCodeVerifiedRequest {
 
 ```
 
-
-
 APK:
-
-
 
 ```text
 
@@ -930,11 +675,7 @@ CheckQrCodeVerifiedResponse()
 
 ```
 
-
-
 Headers:
-
-
 
 ```http
 
@@ -944,11 +685,7 @@ X-LST: <longPollingIntervalSec \* 1000>
 
 ```
 
-
-
 例:
-
-
 
 ```http
 
@@ -958,11 +695,7 @@ X-LST: 30000
 
 ```
 
-
-
 26.xではlong pollingが重要。
-
-
 
 ```ts
 
@@ -976,8 +709,6 @@ for (let i = 0; i < longPollingMaxCount; i++) {
 
 &#x20;       });
 
-
-
 &#x20;       break;
 
 &#x20;   } catch (e) {
@@ -985,8 +716,6 @@ for (let i = 0; i < longPollingMaxCount; i++) {
 &#x20;       if (isPollTimeout(e))
 
 &#x20;           continue;
-
-
 
 &#x20;       throw e;
 
@@ -996,11 +725,7 @@ for (let i = 0; i < longPollingMaxCount; i++) {
 
 ```
 
-
-
 単純な短周期poll:
-
-
 
 ```text
 
@@ -1008,27 +733,15 @@ GET every 1 sec
 
 ```
 
-
-
 のような実装は避ける。
 
+---
 
-
-\---
-
-
-
-\# 11. verifyCertificate
-
-
+## 11. verifyCertificate
 
 以前のQRログインで保存したcertificateがある場合に使用。
 
-
-
 Endpoint:
-
-
 
 ```text
 
@@ -1036,11 +749,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -1048,11 +757,7 @@ verifyCertificate
 
 ```
 
-
-
 Request:
-
-
 
 ```thrift
 
@@ -1066,11 +771,7 @@ struct VerifyCertificateRequest {
 
 ```
 
-
-
 概念:
-
-
 
 ```ts
 
@@ -1084,11 +785,7 @@ await verifyCertificate({
 
 ```
 
-
-
 成功:
-
-
 
 ```text
 
@@ -1096,11 +793,7 @@ PIN確認を省略可能
 
 ```
 
-
-
 失敗:
-
-
 
 ```text
 
@@ -1108,19 +801,11 @@ createPinCodeへ移動
 
 ```
 
-
-
 重要:
-
-
 
 certificateが存在する場合は試す。
 
-
-
 certificateが古い場合でもログイン全体を中断せず:
-
-
 
 ```text
 
@@ -1132,23 +817,13 @@ createPinCode
 
 ```
 
-
-
 とする。
 
+---
 
-
-\---
-
-
-
-\# 12. createPinCode
-
-
+## 12. createPinCode
 
 Endpoint:
-
-
 
 ```text
 
@@ -1156,11 +831,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -1168,11 +839,7 @@ createPinCode
 
 ```
 
-
-
 Request:
-
-
 
 ```thrift
 
@@ -1184,11 +851,7 @@ struct CreatePinCodeRequest {
 
 ```
 
-
-
 Response:
-
-
 
 ```thrift
 
@@ -1200,11 +863,7 @@ struct CreatePinCodeResponse {
 
 ```
 
-
-
 APK確認:
-
-
 
 ```text
 
@@ -1214,31 +873,19 @@ CreatePinCodeResponse(pinCode:
 
 ```
 
-
-
 UI:
-
-
 
 ```text
 
 Verify Login
 
-
-
 Enter this code on your primary LINE device:
-
-
 
 483921
 
 ```
 
-
-
 PINはログイン対象PCへ入力するのではなく、
-
-
 
 ```text
 
@@ -1246,23 +893,13 @@ PINはログイン対象PCへ入力するのではなく、
 
 ```
 
-
-
 する側の認証フローになる。
 
+---
 
-
-\---
-
-
-
-\# 13. checkPinCodeVerified
-
-
+## 13. checkPinCodeVerified
 
 Endpoint:
-
-
 
 ```text
 
@@ -1270,11 +907,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -1282,11 +915,7 @@ checkPinCodeVerified
 
 ```
 
-
-
 Request:
-
-
 
 ```thrift
 
@@ -1298,11 +927,7 @@ struct CheckPinCodeVerifiedRequest {
 
 ```
 
-
-
 APK確認:
-
-
 
 ```text
 
@@ -1312,11 +937,7 @@ CheckPinCodeVerifiedResponse()
 
 ```
 
-
-
 Headers:
-
-
 
 ```http
 
@@ -1326,27 +947,15 @@ X-LST: <longPollingIntervalSec \* 1000>
 
 ```
 
-
-
 これもlong polling。
 
+---
 
-
-\---
-
-
-
-\# 14. qrCodeLoginV2ForSecure
-
-
+## 14. qrCodeLoginV2ForSecure
 
 LINE 26.xの最終ログインRPC。
 
-
-
 Endpoint:
-
-
 
 ```text
 
@@ -1354,11 +963,7 @@ Endpoint:
 
 ```
 
-
-
 RPC:
-
-
 
 ```text
 
@@ -1366,11 +971,7 @@ qrCodeLoginV2ForSecure
 
 ```
 
-
-
 APKで確認:
-
-
 
 ```text
 
@@ -1382,11 +983,7 @@ qrCodeLoginV2ForSecure
 
 ```
 
-
-
 Request field map:
-
-
 
 ```thrift
 
@@ -1406,11 +1003,7 @@ struct QrCodeLoginV2ForSecureRequest {
 
 ```
 
-
-
 Field IDは:
-
-
 
 ```text
 
@@ -1426,11 +1019,7 @@ Field IDは:
 
 ```
 
-
-
 例:
-
-
 
 ```ts
 
@@ -1450,13 +1039,9 @@ Field IDは:
 
 ```
 
-
-
 実装上は、Talk APIで利用するWindowsの`X-Line-Application`/User-Agentとは別に、現在のセカンダリログインゲートウェイが受け付ける`CHROMEOS`/`CHROME`識別子と`autoLoginIsRequired: false`を使用する。Windows/独自モデルのままにすると、ログイン応答は返っても直後のV3 Talk APIで`V3_TOKEN_CLIENT_LOGGED_OUT`になる場合がある。
 
 `nonce` は:
-
-
 
 ```text
 
@@ -1464,23 +1049,13 @@ createQrCodeForSecure
 
 ```
 
-
-
 で取得した値をそのまま返す。
 
+---
 
-
-\---
-
-
-
-\# 15. qrCodeLoginV2 Response
-
-
+## 15. qrCodeLoginV2 Response
 
 26.x解析結果とAPKの構造から:
-
-
 
 ```thrift
 
@@ -1498,19 +1073,13 @@ struct QrCodeLoginV2Response {
 
 &#x20;   6: map<string,string> metaData
 
-
-
 &#x20;   // compatibility fields may exist
 
 }
 
 ```
 
-
-
 最重要なのは:
-
-
 
 ```text
 
@@ -1518,19 +1087,13 @@ field 1
 
 certificate
 
-
-
 field 3
 
 TokenV3IssueResult
 
-
-
 field 4
 
 MID
-
-
 
 field 6
 
@@ -1538,19 +1101,11 @@ metadata
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 16. TokenV3IssueResult
-
-
+## 16. TokenV3IssueResult
 
 概念:
-
-
 
 ```ts
 
@@ -1570,15 +1125,9 @@ interface TokenV3IssueResult {
 
 ```
 
-
-
 実装ではfield IDベースで扱う。
 
-
-
 現在の実装解析では:
-
-
 
 ```text
 
@@ -1592,11 +1141,7 @@ tokenInfo\[6] = issued timestamp/base time
 
 ```
 
-
-
 保存:
-
-
 
 ```text
 
@@ -1608,19 +1153,11 @@ expire
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 17. Authentication State
-
-
+## 17. Authentication State
 
 ログイン前:
-
-
 
 ```text
 
@@ -1628,11 +1165,7 @@ authSessionId
 
 ```
 
-
-
 ログイン中:
-
-
 
 ```http
 
@@ -1640,11 +1173,7 @@ X-Line-Access: <authSessionId>
 
 ```
 
-
-
 ログイン後:
-
-
 
 ```text
 
@@ -1652,11 +1181,7 @@ accessToken
 
 ```
 
-
-
 へ切り替える。
-
-
 
 ```http
 
@@ -1664,11 +1189,7 @@ X-Line-Access: <accessToken>
 
 ```
 
-
-
 つまり:
-
-
 
 ```text
 
@@ -1676,23 +1197,13 @@ authSessionId != Access Token
 
 ```
 
-
-
 必ず別物として扱う。
 
+---
 
-
-\---
-
-
-
-\# 18. Certificate Storage
-
-
+## 18. Certificate Storage
 
 QRログイン成功時:
-
-
 
 ```text
 
@@ -1700,15 +1211,9 @@ QrCodeLoginV2Response.certificate
 
 ```
 
-
-
 を保存。
 
-
-
 例:
-
-
 
 ```text
 
@@ -1720,11 +1225,7 @@ app-data/
 
 ```
 
-
-
 次回ログイン:
-
-
 
 ```text
 
@@ -1738,11 +1239,7 @@ createSession
 
 ```
 
-
-
 certificate有効:
-
-
 
 ```text
 
@@ -1750,11 +1247,7 @@ PIN省略
 
 ```
 
-
-
 certificate無効:
-
-
 
 ```text
 
@@ -1762,19 +1255,11 @@ PIN認証
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 19. Token Storage
-
-
+## 19. Token Storage
 
 保存対象:
-
-
 
 ```json
 
@@ -1794,15 +1279,9 @@ PIN認証
 
 ```
 
-
-
 Windowsではplaintext JSONを避ける。
 
-
-
 推奨:
-
-
 
 ```text
 
@@ -1812,11 +1291,7 @@ DPAPI
 
 ```
 
-
-
 Electronなら:
-
-
 
 ```text
 
@@ -1824,11 +1299,7 @@ safeStorage
 
 ```
 
-
-
 Tauriなら:
-
-
 
 ```text
 
@@ -1836,29 +1307,17 @@ Windows Credential Manager
 
 ```
 
-
-
 またはOS keychain。
 
+---
 
-
-\---
-
-
-
-\# 20. Access Token Header
-
-
+## 20. Access Token Header
 
 通常RPC:
-
-
 
 ```http
 
 POST /S4
-
-
 
 Content-Type: application/x-thrift
 
@@ -1868,19 +1327,11 @@ X-Line-Access: <accessToken>
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 21. Initial Authentication Validation
-
-
+## 21. Initial Authentication Validation
 
 ログイン完了後、まず:
-
-
 
 ```text
 
@@ -1888,15 +1339,9 @@ getProfile
 
 ```
 
-
-
 を実行する。
 
-
-
 成功すれば:
-
-
 
 ```text
 
@@ -1904,15 +1349,9 @@ access token valid
 
 ```
 
-
-
 と判断。
 
-
-
 概念:
-
-
 
 ```text
 
@@ -1932,57 +1371,31 @@ READY
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 22. Application State Machine
-
-
+## 22. Application State Machine
 
 ```text
 
 LOGGED\_OUT
 
-
-
 &#x20;↓ createSession
-
-
 
 SESSION\_CREATED
 
-
-
 &#x20;↓ createQrCodeForSecure
-
-
 
 QR\_CREATED
 
-
-
 &#x20;↓ display QR
-
-
 
 WAITING\_QR\_SCAN
 
-
-
 &#x20;↓ checkQrCodeVerified
-
-
 
 QR\_VERIFIED
 
-
-
 &#x20;↓ verifyCertificate
-
-
 
 &#x20;┌───────────── success
 
@@ -2000,63 +1413,37 @@ QR\_VERIFIED
 
 &#x20;CREATE\_PIN
 
-
-
 &#x20;      ↓
 
 &#x20;WAITING\_PIN
-
-
 
 &#x20;      ↓
 
 &#x20;checkPinCodeVerified
 
-
-
 &#x20;      ↓
 
 &#x20;LOGIN\_READY
 
-
-
 &#x20;↓ qrCodeLoginV2ForSecure
-
-
 
 TOKEN\_RECEIVED
 
-
-
 &#x20;↓ initialize E2EE
-
-
 
 AUTHENTICATED
 
-
-
 &#x20;↓ getProfile
-
-
 
 READY
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 23. Suggested PC Login API
-
-
+## 23. Suggested PC Login API
 
 UIとは分離して:
-
-
 
 ```ts
 
@@ -2064,15 +1451,11 @@ interface LineAuth {
 
 &#x20;   startQrLogin(): Promise<QrLoginSession>;
 
-
-
 &#x20;   waitForQrScan(
 
 &#x20;       session: QrLoginSession
 
 &#x20;   ): Promise<void>;
-
-
 
 &#x20;   verifySavedCertificate(
 
@@ -2080,15 +1463,11 @@ interface LineAuth {
 
 &#x20;   ): Promise<boolean>;
 
-
-
 &#x20;   createPinCode(
 
 &#x20;       session: QrLoginSession
 
 &#x20;   ): Promise<string>;
-
-
 
 &#x20;   waitForPinVerification(
 
@@ -2096,19 +1475,13 @@ interface LineAuth {
 
 &#x20;   ): Promise<void>;
 
-
-
 &#x20;   completeQrLogin(
 
 &#x20;       session: QrLoginSession
 
 &#x20;   ): Promise<AuthCredentials>;
 
-
-
 &#x20;   restoreSession(): Promise<AuthCredentials | null>;
-
-
 
 &#x20;   logout(): Promise<void>;
 
@@ -2116,15 +1489,9 @@ interface LineAuth {
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 24. QrLoginSession
-
-
+## 24. QrLoginSession
 
 ```ts
 
@@ -2132,27 +1499,15 @@ interface QrLoginSession {
 
 &#x20;   authSessionId: string;
 
-
-
 &#x20;   callbackUrl: string;
-
-
 
 &#x20;   qrUrl: string;
 
-
-
 &#x20;   nonce: string;
-
-
 
 &#x20;   longPollingMaxCount: number;
 
-
-
 &#x20;   longPollingIntervalSec: number;
-
-
 
 &#x20;   e2ee: {
 
@@ -2166,15 +1521,9 @@ interface QrLoginSession {
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 25. AuthCredentials
-
-
+## 25. AuthCredentials
 
 ```ts
 
@@ -2182,19 +1531,11 @@ interface AuthCredentials {
 
 &#x20;   mid: string;
 
-
-
 &#x20;   accessToken: string;
-
-
 
 &#x20;   refreshToken?: string;
 
-
-
 &#x20;   certificate?: string;
-
-
 
 &#x20;   expiresAt?: number;
 
@@ -2202,19 +1543,11 @@ interface AuthCredentials {
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 26. startQrLogin()
-
-
+## 26. startQrLogin()
 
 Pseudo implementation:
-
-
 
 ```ts
 
@@ -2224,8 +1557,6 @@ async function startQrLogin() {
 
 &#x20;       await rpc.createSession();
 
-
-
 &#x20;   const qr =
 
 &#x20;       await rpc.createQrCodeForSecure(
@@ -2234,13 +1565,9 @@ async function startQrLogin() {
 
 &#x20;       );
 
-
-
 &#x20;   const keypair =
 
 &#x20;       generateX25519KeyPair();
-
-
 
 &#x20;   const qrUrl =
 
@@ -2252,43 +1579,29 @@ async function startQrLogin() {
 
 &#x20;       );
 
-
-
 &#x20;   return {
 
 &#x20;       authSessionId:
 
 &#x20;           session.authSessionId,
 
-
-
 &#x20;       callbackUrl:
 
 &#x20;           qr.callbackUrl,
 
-
-
 &#x20;       qrUrl,
-
-
 
 &#x20;       nonce:
 
 &#x20;           qr.nonce,
 
-
-
 &#x20;       longPollingMaxCount:
 
 &#x20;           qr.longPollingMaxCount,
 
-
-
 &#x20;       longPollingIntervalSec:
 
 &#x20;           qr.longPollingIntervalSec,
-
-
 
 &#x20;       e2ee: keypair
 
@@ -2298,15 +1611,9 @@ async function startQrLogin() {
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 27. completeQrLogin()
-
-
+## 27. completeQrLogin()
 
 ```ts
 
@@ -2320,25 +1627,17 @@ async function completeQrLogin(session) {
 
 &#x20;               session.authSessionId,
 
-
-
 &#x20;           systemName:
 
 &#x20;               "CHROMEOS",
-
-
 
 &#x20;           modelName:
 
 &#x20;               "CHROME",
 
-
-
 &#x20;           autoLoginIsRequired:
 
 &#x20;               false,
-
-
 
 &#x20;           nonce:
 
@@ -2346,13 +1645,9 @@ async function completeQrLogin(session) {
 
 &#x20;       });
 
-
-
 &#x20;   const token =
 
 &#x20;       response.tokenV3IssueResult;
-
-
 
 &#x20;   await credentialStore.save({
 
@@ -2360,19 +1655,13 @@ async function completeQrLogin(session) {
 
 &#x20;           token.accessToken,
 
-
-
 &#x20;       refreshToken:
 
 &#x20;           token.refreshToken,
 
-
-
 &#x20;       certificate:
 
 &#x20;           response.certificate,
-
-
 
 &#x20;       mid:
 
@@ -2380,31 +1669,19 @@ async function completeQrLogin(session) {
 
 &#x20;   });
 
-
-
 &#x20;   return credentials;
 
 }
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 28. E2EE After Login
-
-
+## 28. E2EE After Login
 
 これは重要。
 
-
-
 LINEはLetter Sealingを使用するため、
-
-
 
 ```text
 
@@ -2412,15 +1689,9 @@ QRログイン成功
 
 ```
 
-
-
 だけでチャットクライアントとして完成ではない。
 
-
-
 QR生成時に作成した:
-
-
 
 ```text
 
@@ -2428,11 +1699,7 @@ X25519 private key
 
 ```
 
-
-
 とサーバーから返されたE2EE metadataを使用して:
-
-
 
 ```text
 
@@ -2440,15 +1707,9 @@ existing E2EE keys import
 
 ```
 
-
-
 を行う。
 
-
-
 ForSecureレスポンスではE2EE情報が:
-
-
 
 ```text
 
@@ -2456,23 +1717,15 @@ metaData\["e2eeInfo"]
 
 ```
 
-
-
 に入る場合がある。
 
-
-
 概念:
-
-
 
 ```ts
 
 const e2eeInfo =
 
 &#x20;   response.metaData?.e2eeInfo;
-
-
 
 if (e2eeInfo) {
 
@@ -2488,11 +1741,7 @@ if (e2eeInfo) {
 
 ```
 
-
-
 失敗・未提供の場合:
-
-
 
 ```text
 
@@ -2500,23 +1749,13 @@ registerE2EEKeyPair()
 
 ```
 
-
-
 へフォールバック。
 
+---
 
-
-\---
-
-
-
-\# 29. Legacy QR Flow
-
-
+## 29. Legacy QR Flow
 
 APKには旧APIも残っている。
-
-
 
 ```text
 
@@ -2538,11 +1777,7 @@ qrCodeLoginV2
 
 ```
 
-
-
 旧:
-
-
 
 ```thrift
 
@@ -2558,11 +1793,7 @@ struct QrCodeLoginRequest {
 
 ```
 
-
-
 V2:
-
-
 
 ```thrift
 
@@ -2580,11 +1811,7 @@ struct QrCodeLoginV2Request {
 
 ```
 
-
-
 ただしLINE Android 26.xでは:
-
-
 
 ```text
 
@@ -2594,23 +1821,13 @@ qrCodeLoginV2ForSecure
 
 ```
 
-
-
 を優先する。
 
+---
 
-
-\---
-
-
-
-\# 30. Login-related RPC Inventory Found in 26.11.0
-
-
+## 30. Login-related RPC Inventory Found in 26.11.0
 
 APKから確認できたもの:
-
-
 
 ```text
 
@@ -2618,21 +1835,13 @@ createSession
 
 createSessionV2
 
-
-
 createQrCode
 
 createQrCodeForSecure
 
-
-
 checkQrCodeVerified
 
-
-
 verifyCertificate
-
-
 
 createPinCode
 
@@ -2640,47 +1849,27 @@ checkPinCodeVerified
 
 cancelPinCode
 
-
-
 qrCodeLoginV2
 
 qrCodeLoginV2ForSecure
 
-
-
 verifyQrCode
-
-
 
 verifyPinCode
 
-
-
 existPinCode
-
-
 
 fetchPhonePinCodeMsg
 
-
-
 requestToSendPhonePinCode
 
-
-
 verifyPhonePinCode
-
-
 
 checkIfPhonePinCodeMsgVerified
 
 ```
 
-
-
 その他account migration関連:
-
-
 
 ```text
 
@@ -2688,11 +1877,7 @@ migratePrimaryUsingQrCode
 
 ```
 
-
-
 PAaK/passkey系:
-
-
 
 ```text
 
@@ -2704,11 +1889,7 @@ GetChallengeForPaakAuth
 
 ```
 
-
-
 PCの通常QRログインで最低限必要なのは:
-
-
 
 ```text
 
@@ -2728,19 +1909,11 @@ qrCodeLoginV2ForSecure
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 31. Error Model
-
-
+## 31. Error Model
 
 APK:
-
-
 
 ```text
 
@@ -2748,11 +1921,7 @@ SecondaryQrCodeException(code:
 
 ```
 
-
-
 旧IDLから確認されている代表値:
-
-
 
 ```text
 
@@ -2774,11 +1943,7 @@ SecondaryQrCodeException(code:
 
 ```
 
-
-
 実装ではerror codeを直接UIへ出さず:
-
-
 
 ```ts
 
@@ -2790,15 +1955,11 @@ switch (code) {
 
 &#x20;       break;
 
-
-
 &#x20;   case VERIFICATION\_FAILED:
 
 &#x20;       restartLogin();
 
 &#x20;       break;
-
-
 
 &#x20;   case APP\_UPGRADE\_REQUIRED:
 
@@ -2810,27 +1971,15 @@ switch (code) {
 
 ```
 
-
-
 とする。
 
+---
 
-
-\---
-
-
-
-\# 32. QR Expiration
-
-
+## 32. QR Expiration
 
 QRセッションは永続ではない。
 
-
-
 以下を同じsessionで再利用しない:
-
-
 
 ```text
 
@@ -2842,11 +1991,7 @@ expired nonce
 
 ```
 
-
-
 期限切れ時:
-
-
 
 ```text
 
@@ -2854,23 +1999,13 @@ createSession()
 
 ```
 
-
-
 から完全にやり直す。
 
+---
 
-
-\---
-
-
-
-\# 33. Security Requirements
-
-
+## 33. Security Requirements
 
 絶対にログへ出さない:
-
-
 
 ```text
 
@@ -2886,11 +2021,7 @@ E2EE key chain
 
 ```
 
-
-
 development logでも:
-
-
 
 ```text
 
@@ -2900,27 +2031,17 @@ accessToken = eyJh...xxxx
 
 ```
 
-
-
 のようにmaskする。
 
+---
 
-
-\---
-
-
-
-\# 34. Recommended Internal Modules
-
-
+## 34. Recommended Internal Modules
 
 ```text
 
 src/
 
 &#x20; line/
-
-
 
 &#x20;   transport/
 
@@ -2929,8 +2050,6 @@ src/
 &#x20;     http.ts
 
 &#x20;     legy.ts
-
-
 
 &#x20;   auth/
 
@@ -2942,8 +2061,6 @@ src/
 
 &#x20;     credential-store.ts
 
-
-
 &#x20;   e2ee/
 
 &#x20;     x25519.ts
@@ -2951,8 +2068,6 @@ src/
 &#x20;     key-transfer.ts
 
 &#x20;     letter-sealing.ts
-
-
 
 &#x20;   talk/
 
@@ -2964,13 +2079,9 @@ src/
 
 &#x20;     chats.ts
 
-
-
 &#x20;   polling/
 
 &#x20;     client.ts
-
-
 
 &#x20;   media/
 
@@ -2980,15 +2091,9 @@ src/
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 35. Architecture
-
-
+## 35. Architecture
 
 ```text
 
@@ -3054,19 +2159,11 @@ src/
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 36. Minimum Viable Login Implementation
-
-
+## 36. Minimum Viable Login Implementation
 
 Phase 1:
-
-
 
 ```text
 
@@ -3094,11 +2191,7 @@ Phase 1:
 
 ```
 
-
-
 Phase 2:
-
-
 
 ```text
 
@@ -3112,11 +2205,7 @@ Phase 2:
 
 ```
 
-
-
 Phase 3:
-
-
 
 ```text
 
@@ -3132,11 +2221,7 @@ Phase 3:
 
 ```
 
-
-
 Phase 4:
-
-
 
 ```text
 
@@ -3150,15 +2235,9 @@ Phase 4:
 
 ```
 
+---
 
-
-\---
-
-
-
-\# 37. Confidence Table
-
-
+## 37. Confidence Table
 
 | Item                               | Status                                         |
 
@@ -3204,33 +2283,19 @@ Phase 4:
 
 | current OBS image upload flow      | NEXT ANALYSIS TARGET                           |
 
+---
 
-
-\---
-
-
-
-\# 38. Recommended Flow for the Desktop Client
-
-
+## 38. Recommended Flow for the Desktop Client
 
 実際のPC版ではこれだけを入口にする。
-
-
 
 ```ts
 
 const session = await line.auth.beginQrLogin();
 
-
-
 ui.showQr(session.qrUrl);
 
-
-
 await line.auth.waitForQrScan(session);
-
-
 
 if (
 
@@ -3242,36 +2307,22 @@ if (
 
 &#x20;       await line.auth.createPin(session);
 
-
-
 &#x20;   ui.showPin(pin);
-
-
 
 &#x20;   await line.auth.waitForPin(session);
 
 }
 
-
-
 const account =
 
 &#x20;   await line.auth.finish(session);
 
-
-
 await line.e2ee.initialize(account);
 
-
-
 await line.connect();
-
-
 
 ui.openMainScreen();
 
 ```
-
-
 
 これをUI側から見た唯一のログインフローとする。

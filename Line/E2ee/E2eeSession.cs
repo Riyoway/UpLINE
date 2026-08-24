@@ -5,7 +5,8 @@ namespace UpLINE.Line.E2ee;
 
 /// <summary>
 /// Holds the transient X25519 material created for a secure QR session.
-/// The exact e2eeInfo/Letter Sealing payload format is not present in LINE_API.md,
+/// The exact e2eeInfo/Letter Sealing payload format is not established in the
+/// LINE Android APK analysis notes,
 /// so this boundary deliberately does not invent a wire format.
 /// </summary>
 public sealed class E2eeSession : IDisposable

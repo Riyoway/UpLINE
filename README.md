@@ -17,7 +17,7 @@ Windows向けの、非公式LINEサードパーティークライアントです
 - Thrift Compact/Binary応答の読み取りと、未知フィールドを保ったデコード境界
 - QRログイン時のX25519鍵生成と、ログイン後の一時的なE2EE鍵境界
 
-Talk APIのfield map、E2EEの完全なメッセージ復号、メディア形式、通知の常時同期はサーバー仕様の確定後に拡張する領域です。詳細な調査メモは [LINE_API.md](LINE_API.md) を参照してください。これはLINE公式ドキュメントではありません。
+Talk APIのfield map、E2EEの完全なメッセージ復号、メディア形式、通知の常時同期はサーバー仕様の確定後に拡張する領域です。詳細な調査メモは [LINE Android APK解析メモ](docs/line-android-apk-analysis.md) を参照してください。これはLINE公式ドキュメントではありません。
 
 ## 必要環境
 
